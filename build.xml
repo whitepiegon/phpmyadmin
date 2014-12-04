@@ -57,6 +57,7 @@
               --exclude test
               --exclude PMAStandard
               --exclude build
+              --exclude vendor
               --exclude libraries/tcpdf
               --exclude libraries/php-gettext
               --exclude libraries/bfShapeFiles
@@ -84,7 +85,7 @@
   </exec>
  </target>
 
- <target name="phpcs" description="Generate checkstyle.xml using PHP_CodeSniffer excluding test, tcpdf directories">
+ <target name="phpcs" description="Generate checkstyle.xml using PHP_CodeSniffer excluding third party libraries">
   <exec executable="phpcs">
    <arg line="
               --ignore=*/php-gettext/*,*/vendor/*,*/tcpdf/*,*/canvg/*,*/codemirror/*,*/openlayers/*,*/jquery/*,*/jqplot/*,*/build/*,*/bfShapeFiles/*,*/PMAStandard/*,*/phpseclib/*,*/recaptchalib.php,*/swekey.php
@@ -110,7 +111,7 @@
   </exec>
  </target>
 
- <target name="jshint" description="Javascript checks">
+<target name="jshint" description="Javascript checks">
   <apply executable="jshint" output="${basedir}/build/logs/jshint-jslint.xml"  parallel="true">
    <arg line="--config ./.jshintrc --reporter=jslint" />
    <fileset dir="${basedir}">
