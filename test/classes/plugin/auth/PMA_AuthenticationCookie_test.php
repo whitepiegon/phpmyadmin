@@ -831,6 +831,8 @@ class PMA_AuthenticationCookie_Test extends PHPUnit_Framework_TestCase
             isset($_SERVER['PHP_AUTH_PW'])
         );
 
+        $this->object->storeUserCredentials();
+
         $this->assertTrue(
             isset($_COOKIE['pmaUser-1'])
         );
@@ -900,6 +902,7 @@ class PMA_AuthenticationCookie_Test extends PHPUnit_Framework_TestCase
         $attrInstance->setValue(null, $mockResponse);
 
         $this->object->authSetUser();
+        $this->object->storeUserCredentials();
 
         $this->assertTrue(
             isset($_COOKIE['pmaServer-2'])

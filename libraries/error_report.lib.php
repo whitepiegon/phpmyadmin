@@ -181,6 +181,20 @@ function PMA_countLines($filename)
 {
     global $LINE_COUNT;
     if (!defined('LINE_COUNTS')) {
+
+        // ensure that the file is inside the phpMyAdmin folder
+        $depath = 1;
+        foreach (explode('/', $filename) as $part) {
+            if ($part == '..') {
+                $depath--;
+            } elseif ($part != '.') {
+                $depath++;
+            }
+            if ($depath < 0) {
+                return 0;
+            }
+        }
+
         $linecount = 0;
         $handle = fopen('./js/' . $filename, 'r');
         while (!feof($handle)) {
@@ -286,7 +300,7 @@ function PMA_getErrorReportForm()
             . __('You may examine the data in the error report:')
             .'</p></label></div>'
             .'<pre class="report-data">'
-            .PMA_getReportData()
+            . htmlspecialchars(PMA_getReportData())
             .'</pre>';
 
     $html .= '<div class="label"><label><p>'

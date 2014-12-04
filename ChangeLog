@@ -1,6 +1,45 @@
 phpMyAdmin - ChangeLog
 ======================
 
+4.1.14.8 (2014-12-03)
+- bug #4611 [security] DOS attack with long passwords
+
+4.1.14.7 (2014-11-20)
+- bug #4596 [security] XSS through exception stack
+- bug #4595 [security] Path traversal can lead to leakage of line count
+- bug #4578 [security] XSS vulnerability in table print view
+- bug #4579 [security] XSS vulnerability in zoom search page
+- bug #4594 [security] Path traversal in file inclusion of GIS factory
+- bug #4598 [security] XSS in multi submit
+- bug #4597 [security] XSS through pma_fontsize cookie
+
+4.1.14.6 (2014-10-21)
+- bug #4562 [security] XSS in debug SQL output
+- bug #4563 [security] XSS in monitor query analyzer
+
+4.1.14.5 (2014-10-01)
+- bug #4544 [security] XSS vulnerabilities in table search and table structure pages
+
+4.1.14.4 (2014-09-13)
+- bug #4530 [security] DOM based XSS that results to a CSRF that creates a
+            ROOT account in certain conditions
+
+4.1.14.3 (2014-08-17)
+- bug #4501 [security] XSS in table browse page
+- bug #4502 [security] Self-XSS in enum value editor
+- bug #4503 [security] Self-XSSes in monitor
+- bug #4505 [security] XSS in view operations page
+- bug #4504 [security] Self-XSS in query charts
+- bug #4517 [security] XSS in relation view
+
+4.1.14.2 (2014-07-17)
+- bug #4488 [security] XSS injection due to unescaped table name (triggers)
+- bug #4492 [security] XSS in AJAX confirmation messages
+- bug #4491 [security] Missing validation for accessing User groups feature
+
+4.1.14.1 (2014-06-21)
+- bug #4464 [security] XSS injection due to unescaped db/table name in navigation hiding
+
 4.1.14.0 (2014-04-26)
 - bug #4365 Creating bookmark with multiple queries not working
 - bug #4372 Changing browser transformation results in unnecessary table rebuild
