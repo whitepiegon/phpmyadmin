@@ -236,78 +236,6 @@ function PMA_getMemoryLimitForExport()
 }
 
 /**
- * Return the filename and MIME type for export file
- *
- * @param string $export_type       type of export
- * @param string $remember_template whether to remember template
- * @param object $export_plugin     the export plugin
- * @param string $compression       compression asked
- * @param string $filename_template the filename template
- *
- * @return array the filename template and mime type
- */
-function PMA_getExportFilenameAndMimetype(
-    $export_type, $remember_template, $export_plugin, $compression,
-    $filename_template
-) {
-    if ($export_type == 'server') {
-        if (! empty($remember_template)) {
-            $GLOBALS['PMA_Config']->setUserValue(
-                'pma_server_filename_template',
-                'Export/file_template_server',
-                $filename_template
-            );
-        }
-    } elseif ($export_type == 'database') {
-        if (! empty($remember_template)) {
-            $GLOBALS['PMA_Config']->setUserValue(
-                'pma_db_filename_template',
-                'Export/file_template_database',
-                $filename_template
-            );
-        }
-    } else {
-        if (! empty($remember_template)) {
-            $GLOBALS['PMA_Config']->setUserValue(
-                'pma_table_filename_template',
-                'Export/file_template_table',
-                $filename_template
-            );
-        }
-    }
-    $filename = PMA_Util::expandUserString($filename_template);
-    // remove dots in filename (coming from either the template or already
-    // part of the filename) to avoid a remote code execution vulnerability
-    $filename = PMA_sanitizeFilename($filename, $replaceDots = true);
-
-    // Grab basic dump extension and mime type
-    // Check if the user already added extension;
-    // get the substring where the extension would be if it was included
-    $extension_start_pos = /*overload*/mb_strlen($filename) - /*overload*/mb_strlen(
-        $export_plugin->getProperties()->getExtension()
-    ) - 1;
-    $user_extension = /*overload*/mb_substr(
-        $filename, $extension_start_pos, /*overload*/mb_strlen($filename)
-    );
-    $required_extension = "." . $export_plugin->getProperties()->getExtension();
-    if (/*overload*/mb_strtolower($user_extension) != $required_extension) {
-        $filename  .= $required_extension;
-    }
-    $mime_type  = $export_plugin->getProperties()->getMimeType();
-
-    // If dump is going to be compressed, set correct mime_type and add
-    // compression to extension
-    if ($compression == 'gzip') {
-        $filename  .= '.gz';
-        $mime_type = 'application/x-gzip';
-    } elseif ($compression == 'zip') {
-        $filename  .= '.zip';
-        $mime_type = 'application/zip';
-    }
-    return array($filename, $mime_type);
-}
-
-/**
  * Open the export file
  *
  * @param string  $filename     the export filename
@@ -386,85 +314,6 @@ function PMA_closeExportFile($file_handle, $dump_buffer, $save_filename)
         );
     }
     return $message;
-}
-
-/**
- * Compress the export buffer
- *
- * @param string $dump_buffer the current dump buffer
- * @param string $compression the compression mode
- * @param string $filename    the filename
- *
- * @return object $message a message object (or empty string)
- */
-function PMA_compressExport($dump_buffer, $compression, $filename)
-{
-    if ($compression == 'zip' && @function_exists('gzcompress')) {
-        $zipfile = new ZipFile();
-        $zipfile->addFile(
-            $dump_buffer,
-            substr($filename, 0, -4)
-        );
-        $dump_buffer = $zipfile->file();
-    } elseif ($compression == 'gzip' && PMA_gzencodeNeeded()) {
-        // without the optional parameter level because it bugs
-        $dump_buffer = gzencode($dump_buffer);
-    }
-    return $dump_buffer;
-}
-
-/**
- * Returns HTML containing the header for a displayed export
- *
- * @param string $export_type the export type
- * @param string $db          the database name
- * @param string $table       the table name
- *
- * @return array the generated HTML and back button
- */
-function PMA_getHtmlForDisplayedExportHeader($export_type, $db, $table)
-{
-    $html = '<div style="text-align: ' . $GLOBALS['cell_align_left'] . '">';
-
-    /**
-     * Displays a back button with all the $_REQUEST data in the URL
-     * (store in a variable to also display after the textarea)
-     */
-    $back_button = '<p>[ <a href="';
-    if ($export_type == 'server') {
-        $back_button .= 'server_export.php' . PMA_URL_getCommon();
-    } elseif ($export_type == 'database') {
-        $back_button .= 'db_export.php' . PMA_URL_getCommon(array('db' => $db));
-    } else {
-        $back_button .= 'tbl_export.php' . PMA_URL_getCommon(
-            array(
-                'db' => $db, 'table' => $table
-            )
-        );
-    }
-
-    // Convert the multiple select elements from an array to a string
-    if ($export_type == 'server' && isset($_REQUEST['db_select'])) {
-        $_REQUEST['db_select'] = implode(",", $_REQUEST['db_select']);
-    } elseif ($export_type == 'database'
-        && isset($_REQUEST['table_select'])
-    ) {
-        $_REQUEST['table_select'] = implode(",", $_REQUEST['table_select']);
-    }
-
-    foreach ($_REQUEST as $name => $value) {
-        if (!is_array($value)) {
-            $back_button .= '&amp;' . urlencode($name) . '=' . urlencode($value);
-        }
-    }
-    $back_button .= '&amp;repopulate=1">' . __('Back') . '</a> ]</p>';
-
-    $html .= $back_button
-        . '<form name="nofunction">'
-        . '<textarea name="sqldump" cols="50" rows="30" '
-        . 'id="textSQLDUMP" wrap="OFF">';
-
-    return array($html, $back_button);
 }
 
 /**
@@ -606,7 +455,6 @@ function PMA_exportDatabase(
                 }
 
             }
-
         }
         // if this is a view or a merge table, don't export data
         if (($whatStrucOrData == 'data'
@@ -708,9 +556,7 @@ function PMA_exportTable(
     if ($whatStrucOrData == 'structure'
         || $whatStrucOrData == 'structure_and_data'
     ) {
-
         if ($is_view) {
-
             if (isset($GLOBALS['sql_create_view'])) {
                 if (! $export_plugin->exportStructure(
                     $db, $table, $crlf, $err_url, 'create_view',
@@ -722,7 +568,6 @@ function PMA_exportTable(
             }
 
         } else if (isset($GLOBALS['sql_create_table'])) {
-
             if (! $export_plugin->exportStructure(
                 $db, $table, $crlf, $err_url, 'create_table',
                 $export_type, $do_relation, $do_comments,
@@ -775,31 +620,6 @@ function PMA_exportTable(
     if (! $export_plugin->exportDBFooter($db, $db_alias)) {
         return;
     }
-}
-
-/**
- * Loads correct page after doing export
- *
- * @param string $db          the database name
- * @param string $table       the table name
- * @param string $export_type Export type
- *
- * @return void
- */
-function PMA_showExportPage($db, $table, $export_type)
-{
-    global $cfg;
-    if ($export_type == 'server') {
-        $active_page = 'server_export.php';
-        include_once 'server_export.php';
-    } elseif ($export_type == 'database') {
-        $active_page = 'db_export.php';
-        include_once 'db_export.php';
-    } else {
-        $active_page = 'tbl_export.php';
-        include_once 'tbl_export.php';
-    }
-    exit();
 }
 
 /**

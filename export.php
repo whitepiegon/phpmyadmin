@@ -165,6 +165,20 @@ if (!defined('TESTSUITE')) {
 
     PMA_Util::checkParameters(array('what', 'export_type'));
 
+    if ($export_type == 'server') {
+        include_once 'libraries/export/type/ExportServer.class.php';
+        $export_type_class = new ExportServer();
+    } elseif ($export_type == 'database') {
+        include_once 'libraries/export/type/ExportDatabase.class.php';
+        $export_type_class = new ExportDatabase();
+    } elseif ($export_type == 'table') {
+        include_once 'libraries/export/type/ExportTable.class.php';
+        $export_type_class = new ExportTable();
+    } else {
+        PMA_fatalError(__('Bad parameters!'));
+    }
+    $export_type_class->setExportType($export_type);
+
     // export class instance, not array of properties, as before
     $export_plugin = PMA_getPlugin(
         "export",
@@ -322,8 +336,8 @@ if (!defined('TESTSUITE')) {
         if (empty($remember_template)) {
             $remember_template = '';
         }
-        list($filename, $mime_type) = PMA_getExportFilenameAndMimetype(
-            $export_type, $remember_template, $export_plugin, $compression,
+        list($filename, $mime_type) = $export_type_class->getExportFilenameAndMimetype(
+            $remember_template, $export_plugin, $compression,
             $filename_template
         );
     } else {
@@ -338,7 +352,7 @@ if (!defined('TESTSUITE')) {
 
         // problem opening export file on server?
         if (! empty($message)) {
-            PMA_showExportPage($db, $table, $export_type);
+            $export_type_class->getExportPage($db, $table);
         }
     } else {
         /**
@@ -366,9 +380,7 @@ if (!defined('TESTSUITE')) {
                     exit();
                 }
             }
-            list($html, $back_button) = PMA_getHtmlForDisplayedExportHeader(
-                $export_type, $db, $table
-            );
+            list($html, $back_button) = $export_type_class->getHtmlForDisplayedExportHeader( $db, $table);
             echo $html;
             unset($html);
         } // end download
@@ -475,7 +487,7 @@ if (!defined('TESTSUITE')) {
     // End of fake loop
 
     if ($save_on_server && ! empty($message)) {
-        PMA_showExportPage($db, $table, $export_type);
+        $export_type_class->getExportPage($db, $table);
     }
 
     /**
@@ -494,7 +506,7 @@ if (!defined('TESTSUITE')) {
         // Compression needed?
         if ($compression) {
             $dump_buffer
-                = PMA_compressExport($dump_buffer, $compression, $filename);
+                = $export_type_class->compressExport($dump_buffer, $compression, $filename);
         }
 
         /* If we saved on server, we have to close file now */
@@ -502,7 +514,7 @@ if (!defined('TESTSUITE')) {
             $message = PMA_closeExportFile(
                 $file_handle, $dump_buffer, $save_filename
             );
-            PMA_showExportPage($db, $table, $export_type);
+            $export_type_class->getExportPage($db, $table);
         } else {
             echo $dump_buffer;
         }
